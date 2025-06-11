@@ -3,7 +3,7 @@ import threading
 import os
 import base64
 import random
-
+import sys
 def handle_client(file_path, client_addr, main_sock):
     # 创建专用数据端口 (50000-51000)
     data_port = random.randint(50000, 51000)
