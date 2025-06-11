@@ -1,8 +1,10 @@
 import socket
 import sys
+import base64
+import time
 
 def reliable_send(sock, msg, addr, max_retries=5):
-    timeout = 1.0
+    timeout = 1.0  # 初始超时 1 秒
     for attempt in range(max_retries):
         try:
             sock.sendto(msg.encode(), addr)
@@ -10,7 +12,7 @@ def reliable_send(sock, msg, addr, max_retries=5):
             response, _ = sock.recvfrom(2048)
             return response.decode()
         except socket.timeout:
-            timeout *= 2
+            timeout *= 2  # 指数退避
             print(f"Timeout (Attempt {attempt+1}), retrying...")
     return None
 
@@ -61,8 +63,8 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
     with open(file_list) as f:
-        for filename in f:
-            sock.sendto(f"DOWNLOAD {filename.strip()}".encode(), (host, port))
+        for filename in f.readlines():
+            download_file(sock, (host, port), filename.strip())
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,11 @@
 import socket
-import sys
 import threading
+import os
+import base64
+import random
 
 def handle_client(file_path, client_addr, main_sock):
+    # 创建专用数据端口 (50000-51000)
     data_port = random.randint(50000, 51000)
     data_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     data_sock.bind(('0.0.0.0', data_port))
@@ -36,19 +39,23 @@ def handle_client(file_path, client_addr, main_sock):
 
 def main():
     port = int(sys.argv[1])
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(('0.0.0.0', port))
-    print(f"Server started on port {port}")
+    main_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    main_sock.bind(('0.0.0.0', port))
     
+    print(f"Server listening on port {port}")
     while True:
-        data, addr = sock.recvfrom(1024)
-        print(f"Received: {data.decode()} from {addr}")
+        data, addr = main_sock.recvfrom(1024)
+        msg = data.decode().split()
+        
         if msg[0] == "DOWNLOAD":
-          file_path = os.path.join("files/server", msg[1])
-          threading.Thread(
-            target=handle_client,
-            args=(file_path, addr, main_sock)
-          ).start()
+            file_path = os.path.join("files/server", msg[1])
+            if os.path.exists(file_path):
+                threading.Thread(
+                    target=handle_client, 
+                    args=(file_path, addr, main_sock)
+                ).start()
+            else:
+                main_sock.sendto(f"ERR {msg[1]} NOT_FOUND".encode(), addr)
 
 if __name__ == "__main__":
     main()
